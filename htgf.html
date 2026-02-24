@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ديوني">
+    <meta name="apple-mobile-web-app-title" content="ديوني">
+    <meta name="theme-color" content="#4361ee">
+    <meta name="msapplication-navbutton-color" content="#4361ee">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>مدير الديون الاحترافي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --bg-color: #f1f3f9;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white; padding: 15px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+
+        .container {
+            flex: 1; overflow-y: auto;
+            padding: 15px; padding-bottom: 90px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px; padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        input, select {
+            width: 100%; padding: 12px; margin: 8px 0;
+            border: 1px solid #e0e0e0; border-radius: 12px;
+            font-size: 16px; font-family: 'Cairo'; outline: none;
+        }
+
+        .btn {
+            border: none; padding: 12px; border-radius: 12px;
+            font-weight: 700; width: 100%; font-family: 'Cairo';
+            transition: 0.2s;
+        }
+
+        .btn:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-danger { background: #fee2e2; color: var(--danger-color); margin-top: 15px; }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%;
+            background: white; display: flex;
+            padding: 10px 0; border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; color: #a0aec0; font-size: 12px;
+        }
+
+        .nav-item.active { color: var(--primary-color); }
+        .nav-icon { font-size: 22px; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .stat-card { background: #f8fafc; padding: 10px; border-radius: 12px; text-align: center; }
+        .stat-card span { display: block; font-size: 11px; color: #64748b; }
+        .stat-card b { font-size: 14px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 12px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: slideUp 0.3s ease-out; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <h3 style="margin:0;">💰 تطبيق ديوني</h3>
+</div>
+
+<div class="container">
+    <div id="tab1" class="tab-content active">
+        <div class="card">
+            <h4 style="margin-top:0;">👤 إضافة حساب جديد</h4>
+            <input type="text" id="newName" placeholder="اسم الشخص">
+            <input type="number" id="newAmount" placeholder="المبلغ الحالي (إن وجد)">
+            <button class="btn btn-primary" onclick="addPerson()">إضافة القائمة</button>
+        </div>
+
+        <div class="card">
+            <h4>📊 ملخص المبالغ</h4>
+            <table id="remainingTable">
+                <thead>
+                    <tr style="color:#64748b"><th>الاسم</th><th>المطلوب</th></tr>
+                </thead>
+                <tbody id="remainingBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="card">
+            <label>إدارة حساب:</label>
+            <select id="personSelect" onchange="loadData()"></select>
+            
+            <div class="stat-grid">
+                <div class="stat-card"><span>الإجمالي</span><b><span id="total">0</span></b></div>
+                <div class="stat-card"><span>المدفوع</span><b><span id="paid" style="color:var(--success-color)">0</span></b></div>
+                <div class="stat-card"><span>المتبقي</span><b><span id="remain" style="color:var(--danger-color)">0</span></b></div>
+            </div>
+
+            <input type="number" id="amountInput" placeholder="أدخل المبلغ للعملية">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="addDebt()">➕ دين</button>
+                <button class="btn btn-success" onclick="payDebt()">💵 تسديد</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4>📜 السجل العمليات</h4>
+            <table style="font-size: 13px;">
+                <tbody id="historyTable"></tbody>
+            </table>
+            <button class="btn btn-danger" onclick="deleteCurrentPerson()">🗑️ حذف الحساب نهائياً</button>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="openTab(1, this)">
+        <div class="nav-icon">🏠</div><div>الرئيسية</div>
+    </div>
+    <div class="nav-item" onclick="openTab(2, this)">
+        <div class="nav-icon">💸</div><div>العمليات</div>
+    </div>
+</div>
+
+<script>
+    let data = JSON.parse(localStorage.getItem("debts_v3")) || {};
+
+    function save(){
+        localStorage.setItem("debts_v3", JSON.stringify(data));
+        updateUI();
+    }
+
+    function updateUI() {
+        let tbody = document.getElementById('remainingBody');
+        tbody.innerHTML = '';
+        for (let name in data) {
+            let remain = data[name].total - data[name].paid;
+            tbody.innerHTML += `<tr><td>${name}</td><td><b style="color:var(--primary-color)">${remain}</b></td></tr>`;
+        }
+
+        let select = document.getElementById('personSelect');
+        let current = select.value;
+        select.innerHTML = "";
+        for(let name in data) {
+            let opt = document.createElement("option");
+            opt.value = name; opt.textContent = name;
+            select.appendChild(opt);
+        }
+        if(current && data[current]) select.value = current;
+    }
+
+    function openTab(num, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('tab' + num).classList.add('active');
+        el.classList.add('active');
+        if(num === 2) loadData();
+    }
+
+    function addPerson(){
+        let name = document.getElementById('newName').value.trim();
+        let amount = Number(document.getElementById('newAmount').value) || 0;
+        if(!name) return;
+        if(data[name]) return alert("الاسم مسجل مسبقاً");
+        data[name] = { total: amount, paid: 0, history: [] };
+        if(amount > 0) data[name].history.push({date: tdy(), type: "رصيد افتتاح", amount: amount});
+        document.getElementById('newName').value = "";
+        document.getElementById('newAmount').value = "";
+        save();
+    }
+
+    function loadData(){
+        let name = document.getElementById('personSelect').value;
+        if(!name) return;
+        let p = data[name];
+        document.getElementById('total').textContent = p.total;
+        document.getElementById('paid').textContent = p.paid;
+        document.getElementById('remain').textContent = p.total - p.paid;
+        let hTable = document.getElementById('historyTable');
+        hTable.innerHTML = p.history.slice().reverse().map(h => 
+            `<tr><td style="color:#888">${h.date}</td><td>${h.type}</td><td style="font-weight:bold">${h.amount}</td></tr>`
+        ).join('');
+    }
+
+    function addDebt(){
+        let name = document.getElementById('personSelect').value;
+        let val = Number(document.getElementById('amountInput').value);
+        if(!val || !name) return;
+        data[name].total += val;
+        data[name].history.push({date: tdy(), type: "➕ إضافة", amount: val});
+        document.getElementById('amountInput').value = "";
+        save(); loadData();
+    }
+
+    function payDebt(){
+        let name = document.getElementById('personSelect').value;
+        let val = Number(document.getElementById('amountInput').value);
+        if(!val || !name) return;
+        data[name].paid += val;
+        data[name].history.push({date: tdy(), type: "💵 دفع", amount: val});
+        document.getElementById('amountInput').value = "";
+        save(); loadData();
+    }
+
+    function deleteCurrentPerson() {
+        let name = document.getElementById('personSelect').value;
+        if(name && confirm(`حذف ${name}؟`)) {
+            delete data[name];
+            save(); updateUI();
+        }
+    }
+
+    function tdy() {
+        return new Date().toLocaleDateString('ar-DZ', {month:'numeric', day:'numeric'});
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html>
